@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="NPVcalculator">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>NPV Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.10/angular.min.js"></script>
+    <script src="https://cdn.zingchart.com/zingchart.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+<body>
+    <div ng-controller="npvCalcController">
+        <h1>NPV(Net Present Value) Calculator</h1>
+        <div id="section2"></div>
+        <div id="npvChart"></div>
+        <br>
+        <div ng-show="showme">
+                <a href="#section3" id="section1" style="text-decoration:none;">Add new calculation</a>
+        </div>
+        
+        <form name="frm" ng-submit="calculateNpv()">
+            <label for="initialInvestment">Initial Investment:</label>
+            <br>
+            <input type="number" id="initialInvestment" ng-model="initialInvestment"  pattern="[0-9]*" required />
+            <br>
+            <label for="year1">Year 1 : $  </label>
+            <input type="number" id="year1" ng-model="yearOne" pattern="[0-9]*" required />
+            <br>
+            <label for="year2">Year 2 : $  </label>
+            <input type="number" id="year2" ng-model="yearTwo" pattern="[0-9]*" required />
+            <br>
+            <label for="year3">Year 3 : $  </label>
+            <input type="number" id="year3" ng-model="yearThree" pattern="[0-9]*" required />
+            <br>
+            <label for="year4">Year 4 : $  </label>
+            <input type="number" id="year4" ng-model="yearFour" pattern="[0-9]*" required />
+            <br>
+            <label for="year5">Year 5 : $  </label>
+            <input type="number" id="year5" ng-model="yearFive" pattern="[0-9]*" required />
+            <br>
+            <button ng-click="showme=true">Calculate</button>
+        </form>
+        <div id="section3"></div>
+        <div ng-show="showme">
+                <a href="#section2" id="section1" style="text-decoration:none;">Projection Preview</a>
+        </div>
+        <br>
+            <!-- <div id="npvChart"></div> -->
+            
+    </div>
+  
+
+    <script>
+        angular.module('NPVcalculator',[]).controller('npvCalcController',['$scope', function($scope){
+            $scope.npvCalculate = [];
+
+            $scope.calculateNpv = function(){
+                var initialInvestment = 0;
+                var yearOne = 0;
+                var yearTwo = 0;
+                var yearThree = 0;
+                var yearFour = 0;
+                var yearFive = 0;
+
+                initialInvestment = $scope.initialInvestment;
+                yearOne = $scope.yearOne;
+                yearTwo = $scope.yearTwo;
+                yearThree = $scope.yearThree;
+                yearFour = $scope.yearFour;
+                yearFive = $scope.yearFive;
+                
+                var discountRateLevels = [];
+                var discountRateLevelsXlabel =[];
+                for (var i = 0; i < 15.25; i += 0.25) {
+                    var calculated = (i/100) +1
+                    discountRateLevels.push(calculated);
+                    discountRateLevelsXlabel.push(i);
+                }
+                console.log(discountRateLevels,'discountRateLevels')
+                //var cashInflowFromInvestment = (yearOne/1.1) + (yearTwo/Math.pow(1.1,2)) + (yearThree/Math.pow(1.1,3)) + (yearFour/Math.pow(1.1,4)) +  (yearFive/Math.pow(1.1,5)) 
+                var cashInflowFromInvestment = [];
+                
+                for (var j = 0; j < discountRateLevels.length; j++){
+                   var calculatedCashInflowFromInvestment = (yearOne/1.1) + (yearTwo/Math.pow(discountRateLevels[j],2)) + (yearThree/Math.pow((discountRateLevels[j]),3)) + (yearFour/Math.pow(discountRateLevels[j],4)) +  (yearFive/Math.pow(discountRateLevels[j],5)) 
+                   cashInflowFromInvestment.push(calculatedCashInflowFromInvestment);
+                }
+                console.log(cashInflowFromInvestment,'calculatedCashInflowFromInvestment')
+                var netPresentValue = []; 
+
+                for (var k = 0; k <  cashInflowFromInvestment.length; k++) {
+                    var computedNpv = cashInflowFromInvestment[k] - initialInvestment;
+                    netPresentValue.push(Math.round(computedNpv * 100) / 100);
+                    $scope.npvCalculate.push(Math.round(computedNpv * 100) / 100);
+                }
+
+                //var computedNpv = cashInflowFromInvestment - initialInvestment;
+              
+                var myConfig = 
+                {
+                    "type": 'bar',
+                    "title":{
+                         "text":"Net Present Value Projection"
+                     },
+                    "series": [{
+                        "values": $scope.npvCalculate,
+                         }],
+                    "plot":{ 
+                        "aspect":"spline" ,
+                        "animation": {
+                          "delay": "500",
+                          "effect": "4",
+                          "method": "5",
+                          "sequence": "3"
+                        }
+                      }, 
+                    "plotarea": {
+                        "margin": "dynamic 45 60 dynamic",
+                    },
+                    "legend": {
+                        "layout": "float",
+                        "background-color": "none",
+                        "border-width": 0,
+                        "shadow": 0,
+                        "align":"center",
+                        "adjust-layout":true,
+                        "item":{
+                          "padding": 7,
+                          "marginRight": 17,
+                          "cursor":"hand"
+                        },
+                    },
+                    "scaleX": {
+                        "label": {
+                          "text": 'Note: Lower Bound Discount Rate: 1.00% | Upper Bound Discount Rate: 15.00% | Discount Rate Increment: 0.25% ',
+                          "backgroundColor": '#f6f7f8',
+                          "borderColor": '#98c9f9',
+                          "borderRadius": 3,
+                          "borderWidth": 1,
+                          "fontColor": '#51a5f7',
+                          "fontFamily": 'roboto',
+                          "fontSize": 13,
+                          "fontStyle": 'normal',
+                          "fontWeight": 'normal',
+                          "padding": '5px 20px'
+                        },
+                        "labels": discountRateLevelsXlabel
+                      }
+                }
+                zingchart.render({
+                    id: 'npvChart',
+                    data: myConfig
+                });
+            }
+            console.log($scope.npvCalculate,'$scope.npvCalculate')
+            
+            var input = document.querySelectorAll("input[type=number]");
+            input.oninvalid = function(event) {
+            event.target.setCustomValidity("Special characters are not allowed.");
+            }
+            
+            $(document).ready(function(){
+              $("a").on('click', function(event) {
+            
+                if (this.hash !== "") {
+                  event.preventDefault();
+                
+                  var hash = this.hash;
+                  $('html, body').animate({
+                    scrollTop: $(hash).offset().top
+                  }, 800, function(){
+                    window.location.hash = hash;
+                  });
+                }
+              });
+            });
+
+        }])
+
+       
+       
+    </script>
+    <script src="path/to/zingchart.min.js"></script>
+</body>
+</html>
